@@ -4,64 +4,64 @@ Package sqlAssister provides the StatementAssister interface which provides clea
 
 Example:
 
-package main
+	package main
 
-import (
-	"database/sql"
-	_ "github.com/lib/pq"
-	"github.com/zobstory/sqlAssist"
-	"log"
-)
+	import (
+		"database/sql"
+		_ "github.com/lib/pq"
+		"github.com/zobstory/sqlAssist"
+		"log"
+	)
 
-var statementAssist *sqlAssist.AssisterConfig
+	var statementAssist *sqlAssist.AssisterConfig
 
-type Book struct {
-	ID   string
-	Name string
-}
-
-func init() {
-	db, err := sql.Open("postgres", "DB info placeholder")
-	if err != nil {
-		log.Fatalln(err)
+	type Book struct {
+		ID   string
+		Name string
 	}
 
-	statementAssist = sqlAssist.New(db)
-}
+	func init() {
+		db, err := sql.Open("postgres", "DB info placeholder")
+		if err != nil {
+			log.Fatalln(err)
+		}
 
-func SelectBook(bookId string) (*Book, error) {
-	book := &Book{}
-	const statement = `
-		SELECT
-			"ID",
-			"cpu_temp",
-			"fan_speed",
-			"hdd_space",
-			"last_logged_in",
-			"sys_time"
-		FROM "Network"."vw_device"
-		WHERE "ID" = $1;`
-
-	row, err := statementAssist.ScanSingleRow(statement, bookId)
-	if err != nil {
-		return nil, err
+		statementAssist = sqlAssist.New(db)
 	}
 
-	err = row.Scan(book)
-	if err != nil {
-		return nil, err
+	func SelectBook(bookId string) (*Book, error) {
+		book := &Book{}
+		const statement = `
+			SELECT
+				"ID",
+				"cpu_temp",
+				"fan_speed",
+				"hdd_space",
+				"last_logged_in",
+				"sys_time"
+			FROM "Network"."vw_device"
+			WHERE "ID" = $1;`
+
+		row, err := statementAssist.ScanSingleRow(statement, bookId)
+		if err != nil {
+			return nil, err
+		}
+
+		err = row.Scan(book)
+		if err != nil {
+			return nil, err
+		}
+
+		return book, nil
 	}
 
-	return book, nil
-}
-
-func main() {
-	book, err := SelectBook("1")
-	if err != nil {
-		log.Fatalln(err)
+	func main() {
+		book, err := SelectBook("1")
+		if err != nil {
+			log.Fatalln(err)
+		}
+		log.Fatalln(book)
 	}
-	log.Fatalln(book)
-}
 
 See https://pkg.go.dev/database/sql for documentation on the standard sql library
 */
@@ -99,10 +99,10 @@ func New(db *sql.DB) *AssisterConfig {
 
 Example:
 
-err := statementAssist.UpdateSingleRow(statement, args)
-if err != nil {
-	return nil, err
-}
+	err := statementAssist.UpdateSingleRow(statement, args)
+	if err != nil {
+		return nil, err
+	}
 
 */
 func (ac AssisterConfig) UpdateSingleRow(statement string, params ...interface{}) error {
@@ -127,16 +127,16 @@ func (ac AssisterConfig) UpdateSingleRow(statement string, params ...interface{}
 
 Example:
 
-yourStruct := &YourStruct{}
-row, err := statementAssist.UpdateSingleRow(statement, args)
-if err != nil {
-	return nil, err
-}
+	yourStruct := &YourStruct{}
+	row, err := statementAssist.UpdateSingleRow(statement, args)
+	if err != nil {
+		return nil, err
+	}
 
-err = row.Scan(&yourStruct)
-if err != nil {
-	return nil, err
-}
+	err = row.Scan(&yourStruct)
+	if err != nil {
+		return nil, err
+	}
 
 */
 func (ac AssisterConfig) ScanSingleRow(statement string, params ...interface{}) (*sql.Row, error) {
