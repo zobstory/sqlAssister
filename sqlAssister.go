@@ -1,5 +1,4 @@
 /*
-
 Package sqlAssister provides the StatementAssister interface which provides cleaner sql CRUD operations along with query & error logging
 
 Example:
@@ -65,7 +64,6 @@ Example:
 
 See https://pkg.go.dev/database/sql for documentation on the standard sql library
 */
-
 package sqlAssister
 
 import (
@@ -103,7 +101,6 @@ Example:
 	if err != nil {
 		return nil, err
 	}
-
 */
 func (ac AssisterConfig) UpdateSingleRow(statement string, params ...interface{}) error {
 	log.Printf("Query: %s", statement)
@@ -137,7 +134,6 @@ Example:
 	if err != nil {
 		return nil, err
 	}
-
 */
 func (ac AssisterConfig) ScanSingleRow(statement string, params ...interface{}) (*sql.Row, error) {
 	if len(params) < 1 {
@@ -160,21 +156,20 @@ func (ac AssisterConfig) ScanSingleRow(statement string, params ...interface{}) 
 
 Example:
 
-var yourStructSlice []*YourStruct
-rows, err := statementAssist.UpdateSingleRow(statement, args)
-if err != nil {
-	return nil, err
-}
-
-for rows.Next() {
-	yourStruct := &YourStruct{}
-	err := rows.Scan(&yourStruct)
+	var yourStructSlice []*YourStruct
+	rows, err := statementAssist.UpdateSingleRow(statement, args)
 	if err != nil {
 		return nil, err
 	}
-	yourStructSlice = append(yourStructSlice, yourStruct)
-}
 
+	for rows.Next() {
+		yourStruct := &YourStruct{}
+		err := rows.Scan(&yourStruct)
+		if err != nil {
+			return nil, err
+		}
+		yourStructSlice = append(yourStructSlice, yourStruct)
+	}
 */
 func (ac AssisterConfig) ScanMultipleRows(statement string, params ...interface{}) (*sql.Rows, error) {
 	if len(params) < 1 {
