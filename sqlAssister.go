@@ -8,11 +8,11 @@ Example:
 	import (
 		"database/sql"
 		_ "github.com/lib/pq"
-		"github.com/zobstory/sqlAssist"
+		"github.com/zobstory/sqlAssister"
 		"log"
 	)
 
-	var statementAssist *sqlAssist.AssisterConfig
+	var statementAssister *sqlAssister.AssisterConfig
 
 	type Book struct {
 		ID   string
@@ -25,7 +25,7 @@ Example:
 			log.Fatalln(err)
 		}
 
-		statementAssist = sqlAssist.New(db)
+		statementAssister = sqlAssister.New(db)
 	}
 
 	func SelectBook(bookId string) (*Book, error) {
@@ -41,7 +41,7 @@ Example:
 			FROM "Network"."vw_device"
 			WHERE "ID" = $1;`
 
-		row, err := statementAssist.ScanSingleRow(statement, bookId)
+		row, err := statementAssister.ScanSingleRow(statement, bookId)
 		if err != nil {
 			return nil, err
 		}
@@ -97,7 +97,7 @@ func New(db *sql.DB) *AssisterConfig {
 
 Example:
 
-	err := statementAssist.UpdateSingleRow(statement, args)
+	err := AssisterConfig.UpdateSingleRow(statement, args)
 	if err != nil {
 		return nil, err
 	}
@@ -125,7 +125,7 @@ func (ac AssisterConfig) UpdateSingleRow(statement string, params ...interface{}
 Example:
 
 	yourStruct := &YourStruct{}
-	row, err := statementAssist.UpdateSingleRow(statement, args)
+	row, err := AssisterConfig.UpdateSingleRow(statement, args)
 	if err != nil {
 		return nil, err
 	}
@@ -157,7 +157,7 @@ func (ac AssisterConfig) ScanSingleRow(statement string, params ...interface{}) 
 Example:
 
 	var yourStructSlice []*YourStruct
-	rows, err := statementAssist.UpdateSingleRow(statement, args)
+	rows, err := AssisterConfig.UpdateSingleRow(statement, args)
 	if err != nil {
 		return nil, err
 	}
