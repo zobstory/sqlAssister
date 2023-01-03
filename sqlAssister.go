@@ -41,7 +41,7 @@ Example:
 			FROM "Network"."vw_device"
 			WHERE "ID" = $1;`
 
-		row, err := statementAssister.ScanSingleRow(statement, bookId)
+		row, err := statementAssister.SingleRowScanner(statement, bookId)
 		if err != nil {
 			return nil, err
 		}
@@ -69,7 +69,6 @@ package sqlAssister
 import (
 	"database/sql"
 	"errors"
-	"fmt"
 	"log"
 )
 
@@ -79,8 +78,8 @@ type AssisterConfig struct {
 
 type StatementAssister interface {
 	UpdateSingleRow(query string, params ...interface{}) error
-	ScanSingleRow(db *sql.DB, query string, params ...interface{}) (*sql.Row, error)
-	ScanMultipleRows(query string, params ...interface{}) (*sql.Rows, error)
+	SingleRowScanner(db *sql.DB, query string, params ...interface{}) (*sql.Row, error)
+	MultipleRowScanner(query string, params ...interface{}) (*sql.Rows, error)
 	New() (config *AssisterConfig)
 }
 
@@ -110,7 +109,7 @@ func (ac AssisterConfig) UpdateSingleRow(statement string, params ...interface{}
 		return err
 	}
 	results, err := stmt.Exec(params...)
-	err = getRowsAffected(results, 1)
+	err = GetRowsAffected(results, 1)
 	if err != nil {
 		log.Printf("ERROR: %s", err)
 		return err
@@ -118,14 +117,14 @@ func (ac AssisterConfig) UpdateSingleRow(statement string, params ...interface{}
 	return nil
 }
 
-// ScanSingleRow Executes Read operation on a single record & scans a single record into a struct.
+// SingleRowScanner Executes Read operation on a single record & scans a single record into a struct.
 // Expects ONLY a single record to be returned
 /*
 
 Example:
 
 	yourStruct := &YourStruct{}
-	row, err := AssisterConfig.UpdateSingleRow(statement, args)
+	row, err := AssisterConfig.SingleRowScanner(statement, args)
 	if err != nil {
 		return nil, err
 	}
@@ -135,7 +134,7 @@ Example:
 		return nil, err
 	}
 */
-func (ac AssisterConfig) ScanSingleRow(statement string, params ...interface{}) (*sql.Row, error) {
+func (ac AssisterConfig) SingleRowScanner(statement string, params ...interface{}) (*sql.Row, error) {
 	if len(params) < 1 {
 		noParamsErr := errors.New("no params were passed")
 		return nil, noParamsErr
@@ -150,14 +149,14 @@ func (ac AssisterConfig) ScanSingleRow(statement string, params ...interface{}) 
 	return row, nil
 }
 
-// ScanMultipleRows Executes Read operation on multiple records & scans them into a slice of a struct
-// NOTE: ScanMultipleRows can work with a single record BUT please use ScanSingleRow if you are only expecting a single record to be found
+// MultipleRowScanner Executes Read operation on multiple records & scans them into a slice of a struct
+// NOTE: MultipleRowScanner can work with a single record BUT please use SingleRowScanner if you are only expecting a single record to be found
 /*
 
 Example:
 
 	var yourStructSlice []*YourStruct
-	rows, err := AssisterConfig.UpdateSingleRow(statement, args)
+	rows, err := AssisterConfig.MultipleRowScanner(statement, args)
 	if err != nil {
 		return nil, err
 	}
@@ -171,7 +170,7 @@ Example:
 		yourStructSlice = append(yourStructSlice, yourStruct)
 	}
 */
-func (ac AssisterConfig) ScanMultipleRows(statement string, params ...interface{}) (*sql.Rows, error) {
+func (ac AssisterConfig) MultipleRowScanner(statement string, params ...interface{}) (*sql.Rows, error) {
 	if len(params) < 1 {
 		noParamsErr := errors.New("no params were passed")
 		return nil, noParamsErr
@@ -187,21 +186,5 @@ func (ac AssisterConfig) ScanMultipleRows(statement string, params ...interface{
 		return nil, err
 	}
 	return rows, nil
-}
-
-// getRowsAffected Non-exported helper function that takes the actual number rows affected & compares it to expected number rows affected.
-// Returns an error if the expected rows affected don't match the actual rows affected
-func getRowsAffected(results sql.Result, targetNumRowsAffected int64) error {
-	rowsAffected, err := results.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if rowsAffected != targetNumRowsAffected {
-		sqlErr := errors.New(fmt.Sprintf("number of rows affected does not match the expected number of rows affected: %v / %v", rowsAffected, targetNumRowsAffected))
-		log.Printf("ERROR: %s", sqlErr)
-		return sqlErr
-	}
-	log.Printf("Rows affected: %v / %v", rowsAffected, targetNumRowsAffected)
-	return nil
 }
 
