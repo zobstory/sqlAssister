@@ -4,7 +4,7 @@ A simple package to make working with the standard go sql library easier.
 The `AssisterConfig` interface provides methods:
 - `UpdateSingleRow()`
   - Updates a single record or returns `error`
-- SingleRowScanner()
+- `SingleRowScanner()`
   - Reruns `*sql.Row` or `error`
 - `MultipleRowScanner()`
   - Returns `*sql.Rows` or `error`
