@@ -8,7 +8,7 @@ The `AssisterConfig` interface provides methods:
   - Reruns `*sql.Row` or `error`
 - `MultipleRowScanner()`
   - Returns `*sql.Rows` or `error`
-- New() (config *AssisterConfig)
+- `New()`
   - Returns a new instance of `*AssisterConfig`
 
 Additionally, functions are provided for use with ephemeral DB connections (open a connection to the DB, execute an operation, close the connection to the DB).
