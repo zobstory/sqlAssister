@@ -1,4 +1,4 @@
-package sqlAssister
+package utils
 
 import (
 	"database/sql"

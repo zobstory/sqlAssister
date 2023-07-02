@@ -6,8 +6,7 @@ package sqlAssister
 
 import (
 	"database/sql"
-	"errors"
-	"log"
+	"github.com/zobstory/sqlAssister/utils"
 )
 
 // EphmrlUpdateSingleRow executes any CRUD operation EXCEPT Read for a single record
@@ -16,29 +15,65 @@ import (
 Example:
 	db, err := sql.Open("postgres", "DB info placeholder")
 	if err != nil {
-		log.Fatalln(err)
+		log.Fatal(err)
 	}
 	defer db.Close()
 
-	err := AssisterConfig.EphmrlUpdateSingleRow(db, statement, args)
+	err := Assister.EphmrlUpdateSingleRow(db, query, args)
 	if err != nil {
 		return nil, err
 	}
 */
-func EphmrlUpdateSingleRow(db *sql.DB, statement string, params ...interface{}) error {
-	log.Printf("Query: %s", statement)
-	stmt, err := db.Prepare(statement)
+func EphmrlUpdateSingleRow(db *sql.DB, statement string, args ...any) (*sql.Result, error) {
+	err := utils.QueryCheckerWithArgs(statement, args)
 	if err != nil {
-		log.Printf("ERROR: %s", err)
-		return err
+		return nil, err
 	}
-	results, err := stmt.Exec(params...)
-	err = GetRowsAffected(results, 1)
+
+	results, err := db.Exec(statement, args...)
 	if err != nil {
-		log.Printf("ERROR: %s", err)
-		return err
+		return nil, err
 	}
-	return nil
+
+	err = utils.GetRowsAffected(results, 1)
+	if err != nil {
+		return nil, err
+	}
+
+	return &results, nil
+}
+
+// EphmrlSingleRowScannerWithArgs Executes Read operation on a single record & scans a single record into a struct.
+// Expects ONLY a single record to be returned
+/*
+
+Example:
+
+	db, err := sql.Open("postgres", "DB info placeholder")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+
+	yourStruct := &YourStruct{}
+	row, err := Assister.EphmrlSingleRowScannerWithArgs(db, query, args)
+	if err != nil {
+		return nil, err
+	}
+
+	err = row.Scan(&yourStruct)
+	if err != nil {
+		return nil, err
+	}
+*/
+func EphmrlSingleRowScannerWithArgs(db *sql.DB, query string, args ...any) (*sql.Row, error) {
+	err := utils.QueryCheckerWithArgs(query, args)
+	if err != nil {
+		return nil, err
+	}
+
+	row := db.QueryRow(query, args...)
+	return row, nil
 }
 
 // EphmrlSingleRowScanner Executes Read operation on a single record & scans a single record into a struct.
@@ -49,12 +84,12 @@ Example:
 
 	db, err := sql.Open("postgres", "DB info placeholder")
 	if err != nil {
-		log.Fatalln(err)
+		log.Fatal(err)
 	}
 	defer db.Close()
 
 	yourStruct := &YourStruct{}
-	row, err := AssisterConfig.EphmrlSingleRowScanner(db, statement, args)
+	row, err := Assister.EphmrlSingleRowScanner(db, query)
 	if err != nil {
 		return nil, err
 	}
@@ -64,18 +99,13 @@ Example:
 		return nil, err
 	}
 */
-func EphmrlSingleRowScanner(db *sql.DB, statement string, params ...interface{}) (*sql.Row, error) {
-	if len(params) < 1 {
-		noParamsErr := errors.New("no params were passed")
-		return nil, noParamsErr
-	}
-	log.Printf("Query: %s", statement)
-	stmt, err := db.Prepare(statement)
+func EphmrlSingleRowScanner(db *sql.DB, query string) (*sql.Row, error) {
+	err := utils.QueryChecker(query)
 	if err != nil {
-		log.Printf("ERROR: %s", err)
 		return nil, err
 	}
-	row := stmt.QueryRow(params...)
+
+	row := db.QueryRow(query)
 	return row, nil
 }
 
@@ -87,12 +117,12 @@ Example:
 
 	db, err := sql.Open("postgres", "DB info placeholder")
 	if err != nil {
-		log.Fatalln(err)
+		log.Fatal(err)
 	}
 	defer db.Close()
 
 	var yourStructSlice []*YourStruct
-	rows, err := AssisterConfig.EphmrlMultipleRowScanner(db, statement, args)
+	rows, err := Assister.EphmrlMultipleRowScanner(db, statement)
 	if err != nil {
 		return nil, err
 	}
@@ -106,20 +136,56 @@ Example:
 		yourStructSlice = append(yourStructSlice, yourStruct)
 	}
 */
-func EphmrlMultipleRowScanner(db *sql.DB, statement string, params ...interface{}) (*sql.Rows, error) {
-	if len(params) < 1 {
-		noParamsErr := errors.New("no params were passed")
-		return nil, noParamsErr
-	}
-	log.Printf("Query: %s", statement)
-	stmt, err := db.Prepare(statement)
+func EphmrlMultipleRowScanner(db *sql.DB, query string) (*sql.Rows, error) {
+	err := utils.QueryChecker(query)
 	if err != nil {
 		return nil, err
 	}
-	rows, err := stmt.Query(params...)
+
+	rows, err := db.Query(query)
 	if err != nil {
-		log.Printf("ERROR: %s", err)
 		return nil, err
 	}
+	return rows, nil
+}
+
+// EphmrlMultipleRowScannerWithArgs Executes Read operation on multiple records & scans them into a slice of a struct
+// NOTE: EphmrlMultipleRowScanner can work with a single record BUT please use EphmrlSingleRowScannerWithArgs if you are only expecting a single record to be found
+/*
+
+Example:
+
+	db, err := sql.Open("postgres", "DB info placeholder")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+
+	var yourStructSlice []*YourStruct
+	rows, err := Assister.EphmrlMultipleRowScanner(db, statement, args)
+	if err != nil {
+		return nil, err
+	}
+
+	for rows.Next() {
+		yourStruct := &YourStruct{}
+		err := rows.Scan(&yourStruct)
+		if err != nil {
+			return nil, err
+		}
+		yourStructSlice = append(yourStructSlice, yourStruct)
+	}
+*/
+func EphmrlMultipleRowScannerWithArgs(db *sql.DB, query string, args ...any) (*sql.Rows, error) {
+	err := utils.QueryCheckerWithArgs(query, args)
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := db.Query(query, args)
+	if err != nil {
+		return nil, err
+	}
+
 	return rows, nil
 }

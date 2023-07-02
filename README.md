@@ -1,15 +1,19 @@
 # sqlAssister
 A simple package to make working with the standard go sql library easier. 
 
-The `AssisterConfig` interface provides methods:
+`Assister` provides the methods:
 - `UpdateSingleRow()`
   - Updates a single record or returns `error`
 - `SingleRowScanner()`
   - Reruns `*sql.Row` or `error`
+- `SingleRowScannerWithArgs()`
+  - Requires at least a single argument to be passed with the query & returns `*sql.Row` or `error`
 - `MultipleRowScanner()`
   - Returns `*sql.Rows` or `error`
+- `MultipleRowScannerWithArgs()`
+  - Requires at least a single argument to be passed with the query & returns `*sql.Rows` or `error`
 - `New()`
-  - Returns a new instance of `*AssisterConfig`
+  - Returns `*Assister`
 
 Additionally, functions are provided for use with ephemeral DB connections (open a connection to the DB, execute an operation, close the connection to the DB).
 The functions:
@@ -17,10 +21,12 @@ The functions:
   - Updates a single record or returns `error`
 - `EphmrlSingleRowScanner()`
   - Returns `*sql.Row` or `error`
-- `EphmrlMultipleRowScanner()`
-  - Returns `*sql.Rows` or `error`
+- `EphmrlSingleRowScannerWithArgs()`
+  - Requires at least a single argument to be passed with the query & returns `*sql.Row` or `error`
+- `EphmrlMultipleRowScannerWithArgs()`
+  - Requires at least a single argument to be passed with the query & returns `*sql.Rows` or `error`
 
-### AssisterConfig & StatementAssister Interface
+### Assister & StatementAssister Interface
 sqlAssister provides methods exposed through an interface that expect a persistent connection to the DB
 Example:
 ```
@@ -62,7 +68,7 @@ func SelectBook(bookId string) (*Book, error) {
         FROM "Network"."vw_device"
         WHERE "ID" = $1;`
 
-    row, err := statementAssister.SingleRowScanner(statement, bookId)
+    row, err := statementAssister.SingleRowScannerWithArgs(statement, bookId)
     if err != nil {
         return nil, err
     }
@@ -95,7 +101,7 @@ if err != nil {
 defer db.Close()
 
 yourStruct := &YourStruct{}
-row, err := AssisterConfig.EphmrlSingleRowScanner(db, statement, args)
+row, err := sqlAssister.EphmrlSingleRowScannerWithArgs(db, statement, args)
 if err != nil {
     return nil, err
 }
