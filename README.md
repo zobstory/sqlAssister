@@ -1,7 +1,7 @@
 # sqlAssister
 A simple package to make working with the standard go sql library easier. 
 
-The `Assister` interface provides methods:
+`Assister` provides the methods:
 - `UpdateSingleRow()`
   - Updates a single record or returns `error`
 - `SingleRowScanner()`

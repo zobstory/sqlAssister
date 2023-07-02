@@ -19,12 +19,12 @@ Example:
 	}
 	defer db.Close()
 
-	err := Assister.EphmrlUpdateSingleRow(db, statement, args)
+	err := Assister.EphmrlUpdateSingleRow(db, query, args)
 	if err != nil {
 		return nil, err
 	}
 */
-func EphmrlUpdateSingleRow(db *sql.DB, statement string, args ...interface{}) (*sql.Result, error) {
+func EphmrlUpdateSingleRow(db *sql.DB, statement string, args ...any) (*sql.Result, error) {
 	err := utils.QueryCheckerWithArgs(statement, args)
 	if err != nil {
 		return nil, err
@@ -56,7 +56,7 @@ Example:
 	defer db.Close()
 
 	yourStruct := &YourStruct{}
-	row, err := Assister.EphmrlSingleRowScannerWithArgs(db, statement, args)
+	row, err := Assister.EphmrlSingleRowScannerWithArgs(db, query, args)
 	if err != nil {
 		return nil, err
 	}
@@ -66,13 +66,13 @@ Example:
 		return nil, err
 	}
 */
-func EphmrlSingleRowScannerWithArgs(db *sql.DB, query string, params ...interface{}) (*sql.Row, error) {
-	err := utils.QueryCheckerWithArgs(query, params)
+func EphmrlSingleRowScannerWithArgs(db *sql.DB, query string, args ...any) (*sql.Row, error) {
+	err := utils.QueryCheckerWithArgs(query, args)
 	if err != nil {
 		return nil, err
 	}
 
-	row := db.QueryRow(query, params...)
+	row := db.QueryRow(query, args...)
 	return row, nil
 }
 
@@ -89,7 +89,7 @@ Example:
 	defer db.Close()
 
 	yourStruct := &YourStruct{}
-	row, err := Assister.EphmrlSingleRowScanner(db, statement)
+	row, err := Assister.EphmrlSingleRowScanner(db, query)
 	if err != nil {
 		return nil, err
 	}
@@ -176,7 +176,7 @@ Example:
 		yourStructSlice = append(yourStructSlice, yourStruct)
 	}
 */
-func EphmrlMultipleRowScannerWithArgs(db *sql.DB, query string, args ...interface{}) (*sql.Rows, error) {
+func EphmrlMultipleRowScannerWithArgs(db *sql.DB, query string, args ...any) (*sql.Rows, error) {
 	err := utils.QueryCheckerWithArgs(query, args)
 	if err != nil {
 		return nil, err

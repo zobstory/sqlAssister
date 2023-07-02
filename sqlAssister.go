@@ -1,5 +1,5 @@
 /*
-Package sqlAssister provides the StatementAssister interface which provides cleaner sql CRUD operations along with query & error logging
+Package sqlAssister provides the QueryAssister interface which provides cleaner sql CRUD operations along with query & error logging
 
 Example:
 
@@ -68,7 +68,6 @@ package sqlAssister
 
 import (
 	"database/sql"
-	"errors"
 	"github.com/zobstory/sqlAssister/utils"
 )
 
@@ -76,14 +75,7 @@ type Assister struct {
 	DB *sql.DB
 }
 
-type StatementAssister interface {
-	UpdateSingleRow(query string, params ...interface{}) error
-	SingleRowScanner(db *sql.DB, query string, params ...interface{}) (*sql.Row, error)
-	MultipleRowScanner(query string, params ...interface{}) (*sql.Rows, error)
-	New() (assister *Assister)
-}
-
-// New returns a new instance of Assister to access the StatementAssister interface
+// New returns a new instance of Assister to access the QueryAssister interface
 func New(db *sql.DB) *Assister {
 	config := &Assister{
 		DB: db,
@@ -101,12 +93,12 @@ Example:
 		return nil, err
 	}
 */
-func (ac Assister) UpdateSingleRow(statement string, params ...interface{}) error {
-	stmt, err := ac.DB.Prepare(statement)
+func (ac Assister) UpdateSingleRow(query string, args ...any) error {
+	stmt, err := ac.DB.Prepare(query)
 	if err != nil {
 		return err
 	}
-	results, err := stmt.Exec(params...)
+	results, err := stmt.Exec(args...)
 	if err != nil {
 		return err
 	}
@@ -137,8 +129,9 @@ Example:
 	}
 */
 func (ac Assister) SingleRowScanner(query string) (*sql.Row, error) {
-	if len(query) == 0 {
-		return nil, errors.New("no sql query / statement present")
+	err := utils.QueryChecker(query)
+	if err != nil {
+		return nil, err
 	}
 
 	row := ac.DB.QueryRow(query)
