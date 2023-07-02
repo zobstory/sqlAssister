@@ -12,7 +12,7 @@ Example:
 		"log"
 	)
 
-	var statementAssister *sqlAssister.AssisterConfig
+	var statementAssister *sqlAssister.Assister
 
 	type Book struct {
 		ID   string
@@ -22,7 +22,7 @@ Example:
 	func init() {
 		db, err := sql.Open("postgres", "DB info placeholder")
 		if err != nil {
-			log.Fatalln(err)
+			log.Fatal(err)
 		}
 
 		statementAssister = sqlAssister.New(db)
@@ -57,9 +57,9 @@ Example:
 	func main() {
 		book, err := SelectBook("1")
 		if err != nil {
-			log.Fatalln(err)
+			log.Fatal(err)
 		}
-		log.Fatalln(book)
+		log.Fatal(book)
 	}
 
 See https://pkg.go.dev/database/sql for documentation on the standard sql library
@@ -69,10 +69,10 @@ package sqlAssister
 import (
 	"database/sql"
 	"errors"
-	"log"
+	"github.com/zobstory/sqlAssister/utils"
 )
 
-type AssisterConfig struct {
+type Assister struct {
 	DB *sql.DB
 }
 
@@ -80,12 +80,12 @@ type StatementAssister interface {
 	UpdateSingleRow(query string, params ...interface{}) error
 	SingleRowScanner(db *sql.DB, query string, params ...interface{}) (*sql.Row, error)
 	MultipleRowScanner(query string, params ...interface{}) (*sql.Rows, error)
-	New() (config *AssisterConfig)
+	New() (assister *Assister)
 }
 
-// New returns a new instance of AssisterConfig to access the StatementAssister interface
-func New(db *sql.DB) *AssisterConfig {
-	config := &AssisterConfig{
+// New returns a new instance of Assister to access the StatementAssister interface
+func New(db *sql.DB) *Assister {
+	config := &Assister{
 		DB: db,
 	}
 	return config
@@ -96,24 +96,26 @@ func New(db *sql.DB) *AssisterConfig {
 
 Example:
 
-	err := AssisterConfig.UpdateSingleRow(statement, args)
+	err := Assister.UpdateSingleRow(statement, args)
 	if err != nil {
 		return nil, err
 	}
 */
-func (ac AssisterConfig) UpdateSingleRow(statement string, params ...interface{}) error {
-	log.Printf("Query: %s", statement)
+func (ac Assister) UpdateSingleRow(statement string, params ...interface{}) error {
 	stmt, err := ac.DB.Prepare(statement)
 	if err != nil {
-		log.Printf("ERROR: %s", err)
 		return err
 	}
 	results, err := stmt.Exec(params...)
-	err = GetRowsAffected(results, 1)
 	if err != nil {
-		log.Printf("ERROR: %s", err)
 		return err
 	}
+
+	err = utils.GetRowsAffected(results, 1)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -124,7 +126,7 @@ func (ac AssisterConfig) UpdateSingleRow(statement string, params ...interface{}
 Example:
 
 	yourStruct := &YourStruct{}
-	row, err := AssisterConfig.SingleRowScanner(statement, args)
+	row, err := Assister.SingleRowScanner(statement)
 	if err != nil {
 		return nil, err
 	}
@@ -134,18 +136,39 @@ Example:
 		return nil, err
 	}
 */
-func (ac AssisterConfig) SingleRowScanner(statement string, params ...interface{}) (*sql.Row, error) {
-	if len(params) < 1 {
-		noParamsErr := errors.New("no params were passed")
-		return nil, noParamsErr
+func (ac Assister) SingleRowScanner(query string) (*sql.Row, error) {
+	if len(query) == 0 {
+		return nil, errors.New("no sql query / statement present")
 	}
-	log.Printf("Query: %s", statement)
-	stmt, err := ac.DB.Prepare(statement)
+
+	row := ac.DB.QueryRow(query)
+	return row, nil
+}
+
+// SingleRowScannerWithArgs Executes Read operation on a single record & scans a single record into a struct.
+// Expects ONLY a single record to be returned
+/*
+
+Example:
+
+	yourStruct := &YourStruct{}
+	row, err := Assister.SingleRowScanner(query, args)
 	if err != nil {
-		log.Printf("ERROR: %s", err)
 		return nil, err
 	}
-	row := stmt.QueryRow(params...)
+
+	err = row.Scan(&yourStruct)
+	if err != nil {
+		return nil, err
+	}
+*/
+func (ac Assister) SingleRowScannerWithArgs(query string, args ...any) (*sql.Row, error) {
+	err := utils.QueryCheckerWithArgs(query, args)
+	if err != nil {
+		return nil, err
+	}
+
+	row := ac.DB.QueryRow(query, args...)
 	return row, nil
 }
 
@@ -156,7 +179,7 @@ func (ac AssisterConfig) SingleRowScanner(statement string, params ...interface{
 Example:
 
 	var yourStructSlice []*YourStruct
-	rows, err := AssisterConfig.MultipleRowScanner(statement, args)
+	rows, err := Assister.MultipleRowScanner(query, args)
 	if err != nil {
 		return nil, err
 	}
@@ -170,21 +193,51 @@ Example:
 		yourStructSlice = append(yourStructSlice, yourStruct)
 	}
 */
-func (ac AssisterConfig) MultipleRowScanner(statement string, params ...interface{}) (*sql.Rows, error) {
-	if len(params) < 1 {
-		noParamsErr := errors.New("no params were passed")
-		return nil, noParamsErr
-	}
-	log.Printf("Query: %s", statement)
-	stmt, err := ac.DB.Prepare(statement)
+func (ac Assister) MultipleRowScanner(query string) (*sql.Rows, error) {
+	err := utils.QueryCheckerWithArgs(query)
 	if err != nil {
 		return nil, err
 	}
-	rows, err := stmt.Query(params...)
+
+	rows, err := ac.DB.Query(query)
 	if err != nil {
-		log.Printf("ERROR: %s", err)
 		return nil, err
 	}
+
 	return rows, nil
 }
 
+// MultipleRowScannerWithArgs Executes Read operation on multiple records & scans them into a slice of a struct
+// NOTE: MultipleRowScannerWithArgs can work with a single record BUT please use SingleRowScannerWithArgs if you are only expecting a single record to be found
+/*
+
+Example:
+
+	var yourStructSlice []*YourStruct
+	rows, err := Assister.MultipleRowScannerWithArgs(statement, args)
+	if err != nil {
+		return nil, err
+	}
+
+	for rows.Next() {
+		yourStruct := &YourStruct{}
+		err := rows.Scan(&yourStruct)
+		if err != nil {
+			return nil, err
+		}
+		yourStructSlice = append(yourStructSlice, yourStruct)
+	}
+*/
+func (ac Assister) MultipleRowScannerWithArgs(query string, args ...any) (*sql.Rows, error) {
+	err := utils.QueryCheckerWithArgs(query, args)
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := ac.DB.Query(query, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	return rows, nil
+}
