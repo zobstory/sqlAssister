@@ -187,7 +187,7 @@ Example:
 	}
 */
 func (ac Assister) MultipleRowScanner(query string) (*sql.Rows, error) {
-	err := utils.QueryCheckerWithArgs(query)
+	err := utils.QueryChecker(query)
 	if err != nil {
 		return nil, err
 	}
