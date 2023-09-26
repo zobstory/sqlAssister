@@ -19,6 +19,6 @@ func GetRowsAffected(results sql.Result, targetNumRowsAffected int64) error {
 		log.Printf("ERROR: %s", sqlErr)
 		return sqlErr
 	}
-	log.Printf("Rows affected: %v / %v", rowsAffected, targetNumRowsAffected)
+
 	return nil
 }
