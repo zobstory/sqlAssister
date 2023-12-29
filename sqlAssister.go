@@ -93,7 +93,7 @@ Example:
 		return nil, err
 	}
 */
-func (ac Assister) UpdateSingleRow(query string, args ...any) error {
+func (ac *Assister) UpdateSingleRow(query string, args ...any) error {
 	stmt, err := ac.DB.Prepare(query)
 	if err != nil {
 		return err
@@ -128,7 +128,7 @@ Example:
 		return nil, err
 	}
 */
-func (ac Assister) SingleRowScanner(query string) (*sql.Row, error) {
+func (ac *Assister) SingleRowScanner(query string) (*sql.Row, error) {
 	err := utils.QueryChecker(query)
 	if err != nil {
 		return nil, err
@@ -155,7 +155,7 @@ Example:
 		return nil, err
 	}
 */
-func (ac Assister) SingleRowScannerWithArgs(query string, args ...any) (*sql.Row, error) {
+func (ac *Assister) SingleRowScannerWithArgs(query string, args ...any) (*sql.Row, error) {
 	err := utils.QueryCheckerWithArgs(query, args)
 	if err != nil {
 		return nil, err
@@ -186,7 +186,7 @@ Example:
 		yourStructSlice = append(yourStructSlice, yourStruct)
 	}
 */
-func (ac Assister) MultipleRowScanner(query string) (*sql.Rows, error) {
+func (ac *Assister) MultipleRowScanner(query string) (*sql.Rows, error) {
 	err := utils.QueryChecker(query)
 	if err != nil {
 		return nil, err
@@ -221,7 +221,7 @@ Example:
 		yourStructSlice = append(yourStructSlice, yourStruct)
 	}
 */
-func (ac Assister) MultipleRowScannerWithArgs(query string, args ...any) (*sql.Rows, error) {
+func (ac *Assister) MultipleRowScannerWithArgs(query string, args ...any) (*sql.Rows, error) {
 	err := utils.QueryCheckerWithArgs(query, args)
 	if err != nil {
 		return nil, err
@@ -233,4 +233,31 @@ func (ac Assister) MultipleRowScannerWithArgs(query string, args ...any) (*sql.R
 	}
 
 	return rows, nil
+}
+
+// NoRowsOKErrorHandler checks if an error is sql.ErrNoRows & if it is, then it responds with a nil error. Otherwise, it returns the error
+/*
+
+Example:
+
+	var yourStructSlice []*YourStruct
+	rows, err := Assister.MultipleRowScannerWithArgs(statement, args)
+	if err != nil {
+		return nil, err
+	}
+
+	for rows.Next() {
+		yourStruct := &YourStruct{}
+		err := rows.Scan(&yourStruct)
+		if NoRowsOKErrorHandler(err) != nil {
+			return nil, err
+		}
+		yourStructSlice = append(yourStructSlice, yourStruct)
+	}
+*/
+func NoRowsOKErrorHandler(err error) error {
+	if err != nil && err != sql.ErrNoRows {
+		return err
+	}
+	return nil
 }
